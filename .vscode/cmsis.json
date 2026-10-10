@@ -1,0 +1,9 @@
+{
+    "targetSet": {
+        "wujie_convery": {
+            "activeTargetType": "Debug"
+        }
+    },
+    "activeSolution": "../wujie_convery.csolution.yml",
+    "activeTarget": "Debug"
+}

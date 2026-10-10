@@ -1,0 +1,48 @@
+# ============================================================
+# Keil MDK 构建产物（MDK-ARM/SCH_NET-RELAY/ 为输出目录）
+# ============================================================
+MDK-ARM/SCH_NET-RELAY/
+MDK-ARM/RTE/
+MDK-ARM/*.build_log.htm
+MDK-ARM/build_log*.txt
+MDK-ARM/ExtDll.iex
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+MDK-ARM/*.lst
+MDK-ARM/*.o
+MDK-ARM/*.axf
+MDK-ARM/*.hex
+MDK-ARM/*.map
+MDK-ARM/DebugConfig/
+MDK-ARM/.vscode/
+
+# ============================================================
+# VS Code 个人运行文件（保留 c_cpp_properties.json / tasks.json）
+# ============================================================
+.vscode/*.log
+.vscode/*.lock
+
+# ============================================================
+# 操作系统 / 编辑器
+# ============================================================
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.bak
+*~
+
+# ============================================================
+# CMSIS-Toolbox (Keil Studio / csolution) build artifacts
+# ============================================================
+out/
+tmp/
+*.cbuild-idx.yml
+*.cbuild-pack.yml
+.vscode/settings.json
+
+# ============================================================
+# Keil Studio / CMSIS-Toolbox 自动生成的本地文件
+# ============================================================
+.clangd
+.cmd.jlink
+.cmsis/

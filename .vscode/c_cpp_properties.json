@@ -1,0 +1,32 @@
+{
+    "configurations": [
+        {
+            "name": "SCH_NET-RELAY (GD32F407VG)",
+            "includePath": [
+                "${workspaceFolder}/Core/Inc",
+                "${workspaceFolder}/Core/Src",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Inc/Legacy",
+                "${workspaceFolder}/Drivers/STM32F4xx_HAL_Driver/Src",
+                "${workspaceFolder}/Drivers/CMSIS/Device/ST/STM32F4xx/Include",
+                "${workspaceFolder}/Drivers/CMSIS/Include",
+                "${workspaceFolder}/Drivers/BSP/inc",
+                "${workspaceFolder}/Drivers/BSP/src",
+                "${workspaceFolder}/Tools/inc",
+                "${workspaceFolder}/Tools/src",
+                "${workspaceFolder}/Task/inc",
+                "${workspaceFolder}/Task/src",
+                "${workspaceFolder}/MDK-ARM"
+            ],
+            "defines": [
+                "USE_HAL_DRIVER",
+                "STM32F407xx"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "macos-clang-arm64"
+        }
+    ],
+    "version": 4
+}

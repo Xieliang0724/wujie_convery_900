@@ -1,0 +1,117 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Keil: 编译 (Build)",
+            "type": "shell",
+            "command": "C:/Keil_v5/UV4/UV4.exe",
+            "args": [
+                "-b",
+                "${workspaceFolder}/MDK-ARM/SCH_NET-RELAY.uvprojx",
+                "-o",
+                "${workspaceFolder}/MDK-ARM/build_log.txt"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Keil: 编译并烧录 (Build+Flash)",
+            "type": "shell",
+            "command": "C:/Keil_v5/UV4/UV4.exe",
+            "args": [
+                "-f",
+                "${workspaceFolder}/MDK-ARM/SCH_NET-RELAY.uvprojx",
+                "-o",
+                "${workspaceFolder}/MDK-ARM/build_log.txt"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "CMSIS Erase",
+            "type": "shell",
+            "command": [
+                "echo Connect > .cmd.jlink &&",
+                "echo Erase >> .cmd.jlink &&",
+                "echo Exit >> .cmd.jlink &&",
+                "JLinkExe -device GD32F407VG -if swd -speed 4000 -commandfile .cmd.jlink"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMSIS Load",
+            "type": "shell",
+            "command": [
+                "echo Connect > .cmd.jlink &&",
+                "echo LoadFile \"out/wujie_convery/Debug/Debug/wujie_convery.elf\" >> .cmd.jlink &&",
+                "echo Exit >> .cmd.jlink &&",
+                "JLinkExe -device GD32F407VG -if swd -speed 4000 -commandfile .cmd.jlink"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "CMSIS Run",
+            "type": "shell",
+            "command": "JLinkGDBServerCL",
+            "options": {
+                "cwd": "${workspaceFolder}/",
+                "shell": {
+                    "executable": "/bin/bash",
+                    "args": [
+                        "-c"
+                    ]
+                }
+            },
+            "args": [
+                "-device",
+                "GD32F407VG",
+                "-endian",
+                "little",
+                "-if",
+                "swd",
+                "-speed",
+                "4000",
+                "-nohalt",
+                "-noir",
+                "-nogui",
+                "-localhostonly",
+                "-silent",
+                "-port",
+                "3333",
+                "-TelnetPort",
+                "4444"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "CMSIS Load+Run",
+            "dependsOn": [
+                "CMSIS Load",
+                "CMSIS Run"
+            ],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ]
+}

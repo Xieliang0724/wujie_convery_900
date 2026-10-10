@@ -1,0 +1,21 @@
+solution:
+  created-for: CMSIS-Toolbox@2.15.0
+  compiler: GCC
+  target-types:
+    - type: Debug
+      compiler: GCC
+      device: GD32F407VG
+      target-set:
+        - set:
+          images:
+            - project-context: wujie_convery.Debug
+          debugger:
+            name: J-Link Server
+            clock: 4000000
+            protocol: swd
+  build-types:
+    - type: Debug
+      optimize: debug
+      debug: on
+  projects:
+    - project: ./wujie_convery.cproject.yml
