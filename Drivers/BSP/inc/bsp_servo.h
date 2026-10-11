@@ -66,7 +66,7 @@ extern "C" {
 /* --- 输入区 20-30 --- */
 #define SERVO_MB_REG_START_BTN      20  /* 启动按钮(消抖后) 1=按下 (只读) */
 #define SERVO_MB_REG_STOP_BTN       21  /* 停止按钮(消抖后) 1=按下 (只读) */
-#define SERVO_MB_REG_SENSOR1        22  /* 传感器1原始电平 1=有效 (只读,PD0/输入1,来料→启动) */
+#define SERVO_MB_REG_SENSOR1        22  /* 传感器1(检测到=1,默认高电平/检测到为低) (只读,PD0/输入1,来料→启动) */
 #define SERVO_MB_REG_PNP_IN0        23  /* PNP 输入0..7(只读, 23+i) */
 
 /* --- DI 配置 / 诊断回读区 31-49 --- */
@@ -88,7 +88,7 @@ extern "C" {
 #define SERVO_MB_REG_SPEED_A_SRC    46  /* 主速度A来源设定(H06_00) */
 #define SERVO_MB_REG_DI4_FB         47  /* DI4功能读回(H03_08) */
 #define SERVO_MB_REG_DI5_FB         48  /* DI5功能读回(H03_10) */
-#define SERVO_MB_REG_SENSOR2        49  /* 传感器2原始电平 1=有效 (只读,PD1/输入2,到位→停止) */
+#define SERVO_MB_REG_SENSOR2        49  /* 传感器2(检测到=1,默认高电平/检测到为低) (只读,PD1/输入2,到位→停止) */
 
 void Servo_Init(void);
 MB_Master_Status_t Servo_SetMode(uint16_t mode);

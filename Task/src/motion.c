@@ -3,8 +3,9 @@
  * 单轴伺服运动控制：启动/停止/传感器。
  *  启动  = PB3（常闭，低=按下，消抖后上升沿）或 传感器1 来料信号（上升沿）
  *  停止  = PB4（常闭，低=按下，消抖）或 传感器2 到位信号（立即停机）
- *  传感器1 = 板载 PNP 输入1（PD0 → reg24）：检测到来料 → 启动并锁存运行
- *  传感器2 = 板载 PNP 输入2（PD1 → reg25）：检测到物料到位 → 停机
+ *  传感器1 = 板载 PNP 输入1（PD0 → reg24）：检测到来料（低电平） → 启动并锁存运行
+ *  传感器2 = 板载 PNP 输入2（PD1 → reg25）：检测到物料到位（低电平） → 停机
+ *  传感器信号：默认高电平，检测到才输出低电平（低=检测到/有效）
  *  运行逻辑（边沿触发·锁存运行）：
  *    传感器1/启动按钮触发 → 运行；物料离开传感器1后继续转；
  *    直到传感器2触发或停止按钮按下才停；传感器2未释放（物料未取走）前不允许再次启动。
@@ -51,14 +52,16 @@ static uint8_t stop_btn(void)
 
 static uint8_t sensor1_active(void)
 {
-    /* PNP 传感器接板上 PNP 输入1端子(PD0):检测到物体输出24V→光耦亮→reg24=1→触发启动 */
-    return (mb_holding_regs[MOTION_SENSOR1_REG] == 1u) ? 1u : 0u;
+    /* 传感器默认高电平,检测到来料时输出低电平 → reg=0 → 视为「检测到」有效
+     * 传感器1 接板上 PNP 输入1端子(PD0→reg24) */
+    return (mb_holding_regs[MOTION_SENSOR1_REG] == 0u) ? 1u : 0u;
 }
 
 static uint8_t sensor2_active(void)
 {
-    /* PNP 传感器接板上 PNP 输入2端子(PD1):检测到物体输出24V→光耦亮→reg25=1→触发停机 */
-    return (mb_holding_regs[MOTION_SENSOR2_REG] == 1u) ? 1u : 0u;
+    /* 传感器默认高电平,检测到物料到位时输出低电平 → reg=0 → 视为「检测到」有效
+     * 传感器2 接板上 PNP 输入2端子(PD1→reg25) */
+    return (mb_holding_regs[MOTION_SENSOR2_REG] == 0u) ? 1u : 0u;
 }
 
 void Motion_Init(void)
