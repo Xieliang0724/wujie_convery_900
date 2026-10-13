@@ -6,9 +6,11 @@
  *  传感器1 = 板载 PNP 输入1（PD0 → reg24）：检测到来料（低电平） → 启动并锁存运行
  *  传感器2 = 板载 PNP 输入2（PD1 → reg25）：检测到物料到位（低电平） → 停机
  *  传感器信号：默认高电平，检测到才输出低电平（低=检测到/有效）
- *  运行逻辑（边沿触发·锁存运行）：
- *    传感器1/启动按钮触发 → 运行；物料离开传感器1后继续转；
- *    直到传感器2触发或停止按钮按下才停；传感器2未释放（物料未取走）前不允许再次启动。
+ *  运行逻辑（边沿触发·锁存 + 武装）：
+ *    上电默认「未武装」：即使来料位有物料也不自动启动；
+ *    需人工按一次【启动按钮】→ 武装并启动；
+ *    此后保持武装 —— 来料位有物料即由传感器1自动启动（含传感器2停后再次来料）；
+ *    急停(Estop)后解除武装，需重新按启动按钮。
  * 通过 bsp_servo 驱动伺服（速度模式）。
  */
 #include "motion.h"
@@ -32,8 +34,9 @@
 
 static uint8_t running = 0;
 static uint8_t prev_start = 0;
-static uint8_t prev_s1 = 1;      /* 传感器1边沿记忆,上电置1:上电时物料压在传感器1上不自动启动,需来料位先清空再触发 */
+static uint8_t prev_s1 = 1;      /* 传感器1边沿记忆,上电置1 */
 static uint8_t sensor_latched = 0;
+static uint8_t armed = 0;        /* 自动模式武装标志:需人工按一次启动按钮后才允许传感器1自动启动 */
 static uint8_t start_cnt = 0;   /* 启动消抖计数 */
 static uint8_t stop_cnt = 0;    /* 停止消抖计数 */
 static uint8_t s1_cnt = 0;      /* 传感器1消抖计数 */
@@ -68,11 +71,12 @@ void Motion_Init(void)
 {
     running = 0;
     prev_start = 0;
+    armed = 0;   /* 上电默认未武装:须先按启动按钮,之后才允许传感器1自动启动 */
     Servo_SetMode(SERVO_MODE_SPEED);
     Servo_SetSpeed((int16_t)mb_holding_regs[SERVO_MB_REG_SPEED]);
     Servo_SetAccelDecel(200u, 200u);
     Servo_Disable();
-    LOG("Motion init (speed mode)");
+    LOG("Motion init (speed mode, not armed)");
 }
 
 uint8_t Motion_IsRunning(void)
@@ -88,6 +92,7 @@ uint8_t Motion_SensorTriggered(void)
 void Motion_Abort(void)
 {
     running = 0;
+    armed = 0;   /* 急停后解除武装:须重新按启动按钮才恢复自动模式 */
     LOG("Motion ABORT (estop)");
 }
 
@@ -114,6 +119,9 @@ void Motion_Update(void)
     mb_holding_regs[SERVO_MB_REG_SENSOR1]   = s1 ? 1u : 0u;  /* 传感器1(原始电平) 1=有效 */
     mb_holding_regs[SERVO_MB_REG_SENSOR2]   = s2 ? 1u : 0u;  /* 传感器2(原始电平) 1=有效 */
 
+    /* 按下启动按钮 → 武装自动模式:此后来料位有物料即由传感器1自动启动 */
+    if (start_edge) armed = 1;
+
     if (running) {
         /* 停止：停止按钮(消抖后) 或 传感器2(立即响应,不消抖) */
         if (stop_db || s2) {
@@ -123,9 +131,13 @@ void Motion_Update(void)
             else LOG("Servo STOP (button)");
         }
     } else {
-        /* 启动：启动按钮上升沿 或 传感器1上升沿(来料)；
-         * 前提：传感器2未有效(物料已取走/未到位) 且 停止按钮未按下 */
-        if ((start_edge || s1_edge) && !s2 && !stop_db) {
+        /* 启动：
+         *   手动  = 启动按钮上升沿(始终有效,且会武装自动模式)
+         *   自动  = 传感器1上升沿(来料) 且 已武装(arm)
+         * 共同前提：传感器2未有效(物料已取走/未到位) 且 停止按钮未按下 */
+        uint8_t start_manual = start_edge;
+        uint8_t start_auto   = s1_edge && armed;
+        if ((start_manual || start_auto) && !s2 && !stop_db) {
             mb_holding_regs[SERVO_MB_REG_RUN] = 1;   /* 运行命令交由 MbPoll 统一下发(含重试) */
             running = 1;
             sensor_latched = 0;
