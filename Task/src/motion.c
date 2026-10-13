@@ -3,9 +3,10 @@
  * 单轴伺服运动控制：启动/停止/传感器。
  *  启动  = PB3（常闭，低=按下，消抖后上升沿）或 传感器1 来料信号（上升沿）
  *  停止  = PB4（常闭，低=按下，消抖）或 传感器2 到位信号（立即停机）
- *  传感器1 = 板载 PNP 输入1（PD0 → reg24）：检测到来料（低电平） → 启动并锁存运行
- *  传感器2 = 板载 PNP 输入2（PD1 → reg25）：检测到物料到位（低电平） → 停机
- *  传感器信号：默认高电平，检测到才输出低电平（低=检测到/有效）
+ *  传感器1 = 板载 输入1（PD0 → reg24）：检测到来料（遮挡=0V，reg=0） → 启动并锁存运行
+ *  传感器2 = 板载 输入2（PD1 → reg25）：检测到物料到位（遮挡=0V，reg=0） → 停机
+ *  传感器信号（镜面反射式）：空闲输出 24V(有信号) → reg=1；被物料遮挡输出 0V → reg=0
+ *    输入电路「端子→R10→PC817」24V 导通：故「检测到(遮挡)」= reg==0
  *  运行逻辑（边沿触发·锁存 + 武装）：
  *    上电默认「未武装」：即使来料位有物料也不自动启动；
  *    需人工按一次【启动按钮】→ 武装并启动；
@@ -27,7 +28,8 @@
 #define MOTION_START_PIN     GPIO_PIN_3   /* PB3 启动 */
 #define MOTION_STOP_PORT     GPIOB
 #define MOTION_STOP_PIN      GPIO_PIN_4   /* PB4 停止 */
-/* 传感器为 PNP 型,接板载 PNP 输入端子:检测到物体输出 24V → 光耦导通 → reg=1
+/* 传感器为镜面反射式,接板载输入端子:空闲输出 24V(有信号)→输入有效(reg=1);
+ * 被物料遮挡输出 0V → 输入无效(reg=0)。故「检测到(遮挡)」= reg==0。
  * 接线:棕→+24V,蓝→0V(必须与板子共地),黑→输入端子,无需上拉电阻 */
 #define MOTION_SENSOR1_REG    SERVO_MB_REG_PNP_IN0 + 1u  /* 传感器1 = 输入1(PD0 → reg24):来料 → 启动 */
 #define MOTION_SENSOR2_REG    SERVO_MB_REG_PNP_IN0 + 2u  /* 传感器2 = 输入2(PD1 → reg25):到位 → 停止 */
@@ -55,16 +57,15 @@ static uint8_t stop_btn(void)
 
 static uint8_t sensor1_active(void)
 {
-    /* 传感器默认高电平,检测到来料时输出低电平 → reg=0 → 视为「检测到」有效
-     * 传感器1 接板上 PNP 输入1端子(PD0→reg24) */
-    return (mb_holding_regs[MOTION_SENSOR1_REG] == 0u) ? 1u : 0u;
+    /* 镜面反射传感器:空闲输出 24V(有信号)→reg=1;被物料遮挡输出 0V→reg=0。
+     * 故「检测到(遮挡)」= reg==0。传感器1 接输入1端子(PD0→reg24) */
+    return (mb_holding_regs[MOTION_SENSOR1_REG] == 0u) ? 1u : 0u;   /* reg==0 = 检测到/有效 */
 }
 
 static uint8_t sensor2_active(void)
 {
-    /* 传感器默认高电平,检测到物料到位时输出低电平 → reg=0 → 视为「检测到」有效
-     * 传感器2 接板上 PNP 输入2端子(PD1→reg25) */
-    return (mb_holding_regs[MOTION_SENSOR2_REG] == 0u) ? 1u : 0u;
+    /* 同传感器1:空闲24V→reg=1, 遮挡0V→reg=0。检测到=reg==0。接输入2端子(PD1→reg25) */
+    return (mb_holding_regs[MOTION_SENSOR2_REG] == 0u) ? 1u : 0u;   /* reg==0 = 检测到/有效 */
 }
 
 void Motion_Init(void)

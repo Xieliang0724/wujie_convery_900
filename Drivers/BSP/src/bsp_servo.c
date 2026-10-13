@@ -122,6 +122,15 @@ void Servo_Init(void)
     mb_holding_regs[SERVO_MB_REG_DI4_FUNC] = 0u;    /* DI4 功能=0(禁用正向点动) */
     mb_holding_regs[SERVO_MB_REG_DI5_FUNC] = 0u;    /* DI5 功能=0(禁用反向点动) */
     mb_holding_regs[SERVO_MB_REG_SPEED_A_SRC] = 0u; /* 主速度A来源=0(H06_03给定) */
+    /* 真实下发 DI 功能/方向/速度源 并同步影子值,避免首轮 MbPoll 事务风暴 */
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x0302u, mb_holding_regs[SERVO_MB_REG_DI1_FUNC], 200u) == MB_M_OK) last_difunc = mb_holding_regs[SERVO_MB_REG_DI1_FUNC];
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x0304u, mb_holding_regs[SERVO_MB_REG_DI2_FUNC], 200u) == MB_M_OK) last_di2f = mb_holding_regs[SERVO_MB_REG_DI2_FUNC];
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x0306u, mb_holding_regs[SERVO_MB_REG_DI3_FUNC], 200u) == MB_M_OK) last_di3f = mb_holding_regs[SERVO_MB_REG_DI3_FUNC];
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x0308u, mb_holding_regs[SERVO_MB_REG_DI4_FUNC], 200u) == MB_M_OK) last_di4f = mb_holding_regs[SERVO_MB_REG_DI4_FUNC];
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x030Au, mb_holding_regs[SERVO_MB_REG_DI5_FUNC], 200u) == MB_M_OK) last_di5f = mb_holding_regs[SERVO_MB_REG_DI5_FUNC];
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x0202u, mb_holding_regs[SERVO_MB_REG_DIR], 200u) == MB_M_OK) last_dir = mb_holding_regs[SERVO_MB_REG_DIR];
+    if (Modbus_Master_WriteSingleReg(SERVO_SLAVE_ADDR, 0x0602u, mb_holding_regs[SERVO_MB_REG_SRC_SEL], 200u) == MB_M_OK) last_srcsel = mb_holding_regs[SERVO_MB_REG_SRC_SEL];
+
     /* 同步影子值:初始化已直接下发,避免首轮 MbPoll 重发全部参数造成事务风暴 */
     last_speed = (int16_t)mb_holding_regs[SERVO_MB_REG_SPEED];
     last_accel = mb_holding_regs[SERVO_MB_REG_ACCEL];
