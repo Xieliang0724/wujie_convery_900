@@ -9,7 +9,7 @@
 
 #define MB_M_MAX_RESPONSE   64u    /* 伺服响应最长 8 字节;限长防噪声喂满长收包阻塞主循环 */
 #define MB_M_INTERBYTE_MS   3u     /* 帧内字节间隔超时(3ms≈26字节周期),限制噪声长收包 */
-#define MB_M_FIRSTBYTE_MS   200u   /* 首字节等待(配合发送前清残留,正常周转几十 ms 即可对齐) */
+#define MB_M_FIRSTBYTE_MS   50u    /* 首字节等待:正常周转 <10ms,50ms 已充裕;降低无响应/异态时主循环阻塞 */
 
 /* 诊断计数器(J-Link 可直接读,正常量产可删) */
 volatile uint32_t g_mb_m_tx_frames = 0;

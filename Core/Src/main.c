@@ -106,6 +106,14 @@ int main(void)
   MX_UART4_UART_Init();
   MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
+  /* IWDG 看门狗提前武装:在 Servo_Init 等阻塞初始化之前启动,总线异常导致初始化卡死时由看门狗复位恢复 */
+  DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_IWDG_STOP;   /* 调试暂停时看门狗冻结,便于单步 */
+  IWDG->KR  = 0xCCCC;                               /* 启动 IWDG */
+  IWDG->KR  = 0x5555;                               /* 解锁 PR/RLR */
+  IWDG->PR  = 6;                                    /* 预分频 256 */
+  IWDG->RLR = 781;                                  /* ~6.3 秒 */
+  while (IWDG->SR != 0) { IWDG->KR = 0xAAAA; }      /* 等待配置生效 */
+
   Alarm_Init();
   Modbus_Init();
   Servo_Init();
@@ -127,14 +135,6 @@ int main(void)
 #if 0
   Modbus_Master_BurstTest();
 #endif
-
-  /* IWDG 看门狗:LSI 32kHz/256=8ms/tick,RLR=781 → 约 6.3 秒;容忍最坏事务组合 */
-  DBGMCU->APB1FZ |= DBGMCU_APB1_FZ_DBG_IWDG_STOP;   /* 调试暂停时看门狗冻结,便于单步 */
-  IWDG->KR  = 0xCCCC;                               /* 启动 IWDG */
-  IWDG->KR  = 0x5555;                               /* 解锁 PR/RLR */
-  IWDG->PR  = 6;                                    /* 预分频 256 */
-  IWDG->RLR = 781;                                  /* ~6.3 秒 */
-  while (IWDG->SR != 0) { IWDG->KR = 0xAAAA; }      /* 等待配置生效 */
 
   while (1)
   {

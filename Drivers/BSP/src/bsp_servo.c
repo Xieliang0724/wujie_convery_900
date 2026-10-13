@@ -328,9 +328,12 @@ void Servo_MbPoll(void)
         if (st == MB_M_OK) mb_holding_regs[SERVO_MB_REG_SPD_SRC_FB] = asrc;        /* H06_00 主速度A来源 */
         if (st == MB_M_OK && asrc != last_asrc) last_asrc = 0xFFFF;
         break;
-    default:
+    case 15:
         st = Modbus_Master_ReadHoldingRegs(SERVO_SLAVE_ADDR, 0x0B02u, 1u, &torque, 200u);
         if (st == MB_M_OK) mb_holding_regs[SERVO_MB_REG_TORQUE_FB] = torque;      /* H0B_02 实时转矩(0.1%) */
+        break;
+    default:
+        st = MB_M_ERR_RX;   /* 兜底:rr 由 %16 约束,不应到达 */
         break;
     case 5:
         st = Modbus_Master_ReadHoldingRegs(SERVO_SLAVE_ADDR, 0x0308u, 1u, &di4f, 200u);
@@ -381,7 +384,7 @@ void Servo_MbPoll(void)
         }
         break;
     }
-    rr = (uint8_t)((rr + 1u) % 15u);
+    rr = (uint8_t)((rr + 1u) % 16u);
     if (st == MB_M_OK) { comm_err_cnt = 0; }
     else { if (comm_err_cnt < 255u) comm_err_cnt++; }
 

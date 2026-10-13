@@ -29,6 +29,9 @@ void LED_Update(void)
     uint8_t  comm_fault   = (dev & 0x08u) ? 1u : 0u;               /* reg0 bit3 通信断开 */
     uint8_t  servo_fault  = (alarm != 0u && alarm != LED_ALARM_WARN_ER941) ? 1u : 0u;  /* 真故障 */
 
+    /* system 灯:运行状态,每拍更新(与是否闪烁无关) */
+    g_io.output.led.system = Motion_IsRunning() ? 1u : 0u;
+
     uint32_t period;
     if (servo_fault) {
         period = 500u;                    /* 伺服真故障:慢闪 */
@@ -45,7 +48,4 @@ void LED_Update(void)
         blink ^= 1u;
         g_io.output.led.working = blink;
     }
-
-    /* system 灯：运行时亮（PE2 镜像 / PE4 反相） */
-    g_io.output.led.system = Motion_IsRunning() ? 1u : 0u;
 }
