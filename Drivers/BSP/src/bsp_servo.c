@@ -224,8 +224,8 @@ void Servo_MbPoll(void)
     uint16_t dir_sel = mb_holding_regs[SERVO_MB_REG_DIR_SEL];   /* 0=正转/1=反转,上位机可写,即写即生效 */
 
     /* 实际下发速度=带符号:反转=负值(驱动器支持运行中换向);传感器触发与按钮触发同样生效 */
-    int16_t cmd_speed = dir_sel ? -(int16_t)speed : (int16_t)speed;
-    if (cmd_speed != last_speed) { if (Servo_SetSpeed(cmd_speed) == MB_M_OK) { last_speed = cmd_speed; param_save_pending = 1; } }   /* 失败保留差值,下轮重试 */
+    int16_t eff_speed = dir_sel ? -(int16_t)speed : (int16_t)speed;
+    if (eff_speed != last_speed) { if (Servo_SetSpeed(eff_speed) == MB_M_OK) { last_speed = eff_speed; param_save_pending = 1; } }   /* 失败保留差值,下轮重试 */
     if (accel != last_accel || decel != last_decel) { if (Servo_SetAccelDecel(accel, decel) == MB_M_OK) { last_accel=accel; last_decel=decel; param_save_pending = 1; } }
     if (mode != last_mode)  { if (Servo_SetMode(mode) == MB_M_OK) last_mode = mode; }
     if (estop != last_estop) {
