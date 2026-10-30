@@ -94,6 +94,7 @@ void Motion_Abort(void)
 {
     running = 0;
     armed = 0;   /* 急停后解除武装:须重新按启动按钮才恢复自动模式 */
+    mb_holding_regs[SERVO_MB_REG_RUN] = 0;   /* 清运行命令:防止急停解除后残留命令被远程同步误认为启动 */
     LOG("Motion ABORT (estop)");
 }
 
@@ -118,6 +119,17 @@ void Motion_Update(void)
     mb_holding_regs[SERVO_MB_REG_STOP_BTN]  = stop_db;    /* 停止按钮(消抖后) 1=按下 */
     mb_holding_regs[SERVO_MB_REG_SENSOR1]   = s1 ? 1u : 0u;  /* 传感器1(原始电平) 1=有效 */
     mb_holding_regs[SERVO_MB_REG_SENSOR2]   = s2 ? 1u : 0u;  /* 传感器2(原始电平) 1=有效 */
+
+    /* 远程命令同步:上位机经 Modbus 直写 reg13 时状态机跟随(远程启动=武装/远程停止=解除武装),
+     * 保证传感器联锁(传感器2立即停、传感器1电平启动、停止优先)对远程操作同样有效 */
+    {
+        uint8_t run_cmd = mb_holding_regs[SERVO_MB_REG_RUN] ? 1u : 0u;
+        if (run_cmd != running) {
+            running = run_cmd;
+            armed = run_cmd;
+            LOG(run_cmd ? "Remote START" : "Remote STOP");
+        }
+    }
 
     /* 停止按钮按下 → 解除武装(退出自动模式):防止手动停止后来料位有料又自转 */
     if (stop_db) armed = 0;
