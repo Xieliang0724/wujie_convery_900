@@ -7,11 +7,12 @@
  *  传感器2 = 板载 输入2（PD1 → reg25）：检测到物料到位（遮挡=0V，reg=0） → 停机
  *  传感器信号（镜面反射式）：空闲输出 24V(有信号) → reg=1；被物料遮挡输出 0V → reg=0
  *    输入电路「端子→R10→PC817」24V 导通：故「检测到(遮挡)」= reg==0
- *  运行逻辑（边沿触发·锁存 + 武装）：
+ *  运行逻辑（电平自动 + 武装）：
  *    上电默认「未武装」：即使来料位有物料也不自动启动；
  *    需人工按一次【启动按钮】→ 武装并启动；
- *    此后保持武装 —— 来料位有物料即由传感器1自动启动（含传感器2停后再次来料）；
- *    急停(Estop)后解除武装，需重新按启动按钮。
+ *    已武装后：来料位有料(电平)且传感器2无料 → 自动启动；
+ *    传感器2停机不解除武装 —— 物料取走后若来料位已有料,自动接续转动；
+ *    【停止按钮】与急停(Estop)解除武装,需重新按启动按钮。
  * 通过 bsp_servo 驱动伺服（速度模式）。
  */
 #include "motion.h"
@@ -36,7 +37,6 @@
 
 static uint8_t running = 0;
 static uint8_t prev_start = 0;
-static uint8_t prev_s1 = 1;      /* 传感器1边沿记忆,上电置1 */
 static uint8_t sensor_latched = 0;
 static uint8_t armed = 0;        /* 自动模式武装标志:需人工按一次启动按钮后才允许传感器1自动启动 */
 static uint8_t start_cnt = 0;   /* 启动消抖计数 */
@@ -112,7 +112,6 @@ void Motion_Update(void)
     uint8_t stop_db  = (stop_cnt  >= 2u);
     uint8_t s1_db    = (s1_cnt    >= 3u);
     uint8_t start_edge = start_db && !prev_start;   /* 启动按钮上升沿(消抖后) */
-    uint8_t s1_edge    = s1_db    && !prev_s1;      /* 传感器1上升沿(消抖后):来料触发启动 */
 
     /* 按钮状态映射到 Modbus(每周期覆盖,上位机只读) */
     mb_holding_regs[SERVO_MB_REG_START_BTN] = start_db;   /* 启动按钮(消抖后) 1=按下 */
@@ -120,7 +119,9 @@ void Motion_Update(void)
     mb_holding_regs[SERVO_MB_REG_SENSOR1]   = s1 ? 1u : 0u;  /* 传感器1(原始电平) 1=有效 */
     mb_holding_regs[SERVO_MB_REG_SENSOR2]   = s2 ? 1u : 0u;  /* 传感器2(原始电平) 1=有效 */
 
-    /* 按下启动按钮 → 武装自动模式:此后来料位有物料即由传感器1自动启动 */
+    /* 停止按钮按下 → 解除武装(退出自动模式):防止手动停止后来料位有料又自转 */
+    if (stop_db) armed = 0;
+    /* 按下启动按钮 → 武装自动模式 */
     if (start_edge) armed = 1;
 
     if (running) {
@@ -134,10 +135,12 @@ void Motion_Update(void)
     } else {
         /* 启动：
          *   手动  = 启动按钮上升沿(始终有效,且会武装自动模式)
-         *   自动  = 传感器1上升沿(来料) 且 已武装(arm)
-         * 共同前提：传感器2未有效(物料已取走/未到位) 且 停止按钮未按下 */
+         *   自动  = 来料位有料(电平,s1_db) 且 已武装(armed)
+         * 共同前提：传感器2未有效(物料已取走/未到位) 且 停止按钮未按下
+         * 说明：自动启动用电平而非边沿——传感器2停机期间放到传感器1的料,
+         *       在传感器2物料取走后能自动接续转动 */
         uint8_t start_manual = start_edge;
-        uint8_t start_auto   = s1_edge && armed;
+        uint8_t start_auto   = s1_db && armed;
         if ((start_manual || start_auto) && !s2 && !stop_db) {
             mb_holding_regs[SERVO_MB_REG_RUN] = 1;   /* 运行命令交由 MbPoll 统一下发(含重试) */
             running = 1;
@@ -147,5 +150,4 @@ void Motion_Update(void)
     }
 
     prev_start = start_db;
-    prev_s1    = s1_db;
 }
