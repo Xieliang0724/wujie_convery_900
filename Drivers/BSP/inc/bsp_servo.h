@@ -90,9 +90,6 @@ extern "C" {
 #define SERVO_MB_REG_DI5_FB         48  /* DI5功能读回(H03_10) */
 #define SERVO_MB_REG_SENSOR2        49  /* 传感器2(检测到=1;空闲24V/遮挡0V→reg==0判有效) (只读,PD1/输入2,到位→停止) */
 
-/* --- 扩展区 50+ (50 预留固件版本号) --- */
-#define SERVO_MB_REG_DIR_SEL        51  /* 运行方向选择 0=正转/1=反转 (读写,即写即生效; 实际下发速度=本位?-reg10:reg10,传感器/按钮触发均生效) */
-
 void Servo_Init(void);
 MB_Master_Status_t Servo_SetMode(uint16_t mode);
 MB_Master_Status_t Servo_SetSpeed(int16_t rpm);
